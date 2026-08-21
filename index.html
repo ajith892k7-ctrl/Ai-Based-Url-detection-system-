@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Phishing URL Detector</title>
+<style>
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    display: flex;
+    justify-content: center;
+    padding-top: 60px;
+    margin: 0;
+  }
+  .card {
+    background: #1e293b;
+    padding: 32px;
+    border-radius: 12px;
+    width: 480px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  p.sub { color: #94a3b8; margin-top: 0; font-size: 14px; }
+  input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #e2e8f0;
+    box-sizing: border-box;
+    font-size: 14px;
+  }
+  button {
+    margin-top: 12px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button:hover { background: #2563eb; }
+  #result { margin-top: 20px; }
+  .phishing { color: #f87171; font-weight: 700; }
+  .legit { color: #4ade80; font-weight: 700; }
+  .bar-bg {
+    background: #334155;
+    border-radius: 6px;
+    height: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ade80, #facc15, #f87171);
+  }
+  .label { font-size: 13px; color: #94a3b8; margin-top: 14px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>🛡️ Phishing URL Detector</h1>
+    <p class="sub">Paste a URL to check if it looks like phishing.</p>
+    <input id="urlInput" type="text" placeholder="https://example.com/login" />
+    <button onclick="checkUrl()">Check URL</button>
+    <div id="result"></div>
+  </div>
+
+<script>
+async function checkUrl() {
+  const url = document.getElementById('urlInput').value.trim();
+  const resultDiv = document.getElementById('result');
+  if (!url) return;
+  resultDiv.innerHTML = "Checking...";
+
+  const res = await fetch('/predict', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({url})
+  });
+  const data = await res.json();
+
+  if (data.error) {
+    resultDiv.innerHTML = `<p style="color:#f87171">${data.error}</p>`;
+    return;
+  }
+
+  const cls = data.prediction === "Phishing" ? "phishing" : "legit";
+  resultDiv.innerHTML = `
+    <div class="label">Result</div>
+    <div class="${cls}" style="font-size:20px">${data.prediction}</div>
+    <div class="label">Risk score: ${data.risk_score}%</div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${data.risk_score}%"></div></div>
+    <div class="label">Confidence: ${data.confidence}%</div>
+  `;
+}
+</script>
+</body>
+</html>
